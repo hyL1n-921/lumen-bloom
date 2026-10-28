@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#05040b">
+  <meta name="color-scheme" content="dark">
+  <meta name="description" content="Lumen Bloom 光绽 — 一朵由实时粒子构成的花，轻触即盛开，再触即收拢。">
+  <meta property="og:title" content="Lumen Bloom — 光绽">
+  <meta property="og:description" content="A procedural particle flower. Click to bloom, click again to furl.">
+  <meta property="og:type" content="website">
+  <title>Lumen Bloom — 光绽</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='16' fill='%23070410'/%3E%3Cpath d='M16 25V11m0 7c-4.3 0-7-2.2-7-5.4 3.9 0 6.2 1.8 7 5.4Zm0-3c3.4 0 5.8-2 6.3-5.6-3.7 0-5.8 1.8-6.3 5.6Z' fill='none' stroke='%23ffa6ce' stroke-width='1.2' stroke-linecap='round'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="./style.css?v=wechat3">
+</head>
+<body>
+  <main class="experience" aria-label="Lumen Bloom 交互式粒子花朵">
+    <div class="atmosphere" aria-hidden="true">
+      <div class="glow glow-rose"></div>
+      <div class="glow glow-cyan"></div>
+      <div class="glow glow-ember"></div>
+      <div class="orbit orbit-outer"></div>
+      <div class="orbit orbit-inner"></div>
+      <div class="horizon"></div>
+    </div>
+
+    <canvas id="scene" tabindex="0" role="button" aria-label="点击或轻触屏幕，让花朵绽放；再次点击，让花朵闭合。也可按空格键或回车键操作。"></canvas>
+
+    <div class="screen-shade" aria-hidden="true"></div>
+    <div class="grain" aria-hidden="true"></div>
+
+    <div class="hud">
+      <header class="topbar">
+        <div class="brand">
+          <p class="eyebrow">
+            <span class="eyebrow-index">Nº 07</span>
+            <span class="eyebrow-rule"></span>
+            <span>Digital Botanica</span>
+          </p>
+          <h1>Lumen <em>Bloom</em></h1>
+          <p class="brand-cn">光绽 <span>/</span> 实时粒子花朵</p>
+        </div>
+
+        <div class="readout">
+          <div class="status" role="status" aria-live="polite">
+            <span class="status-dot"></span>
+            <span class="status-en" id="status-en">AT REST</span>
+            <span class="status-cn" id="status-cn">含苞</span>
+          </div>
+          <p class="readout-note">THREE.JS × GLSL<br>REALTIME PARTICLE STUDY</p>
+        </div>
+      </header>
+
+      <div class="side-note side-note-left" aria-hidden="true">
+        <span>Interactive study</span>
+        <span class="side-note-rule"></span>
+        <span>光与粒子的夜曲</span>
+      </div>
+
+      <div class="side-note side-note-right" aria-hidden="true">
+        <span>Move to shift perspective</span>
+        <span class="side-note-rule"></span>
+        <span>移动鼠标 · 改变视角</span>
+      </div>
+
+      <footer class="footer">
+        <div class="telemetry" aria-label="花朵状态数据">
+          <div class="telemetry-item">
+            <span class="telemetry-label">PARTICLES</span>
+            <span class="telemetry-value" id="particle-count">—</span>
+          </div>
+          <span class="telemetry-divider"></span>
+          <div class="telemetry-item">
+            <span class="telemetry-label">APERTURE</span>
+            <span class="telemetry-value"><span id="aperture">000</span><i>%</i></span>
+          </div>
+        </div>
+
+        <div class="cue-wrap">
+          <div class="cue" id="cue">
+            <span class="cue-orbit" aria-hidden="true"><i></i></span>
+            <span class="cue-copy">
+              <span class="cue-en" id="cue-en">Click to bloom</span>
+              <span class="cue-cn" id="cue-cn">轻触屏幕 · 让花绽放</span>
+            </span>
+            <span class="cue-meter" aria-hidden="true"><i id="cue-meter-fill"></i></span>
+          </div>
+          <p class="cue-foot" aria-hidden="true"><span>01</span> Bloom <span class="cue-foot-slash">/</span> <span>02</span> Furl</p>
+        </div>
+
+        <div class="tools">
+          <button class="sound-toggle" id="sound-toggle" type="button" aria-pressed="false" aria-label="开启声音">
+            <span class="sound-glyph" aria-hidden="true">
+              <i></i><i></i><i></i><i></i>
+            </span>
+            <span class="sound-label">Sound <em id="sound-state">off</em></span>
+          </button>
+        </div>
+      </footer>
+    </div>
+
+    <div class="press-fx" id="press-fx" aria-hidden="true"></div>
+
+    <div class="cursor" id="cursor" aria-hidden="true">
+      <span class="cursor-ring"></span>
+      <span class="cursor-dot"></span>
+    </div>
+
+    <div class="boot-screen" id="boot-screen" role="status" aria-live="polite">
+      <span class="boot-orbit" aria-hidden="true"><i></i></span>
+      <p class="boot-name">LUMEN BLOOM <span>/ 光绽</span></p>
+      <p class="boot-message">正在唤醒花朵</p>
+    </div>
+
+    <div class="fallback" id="fallback" hidden>
+      <p class="fallback-mark" aria-hidden="true">✳</p>
+      <p class="fallback-eyebrow">LUMEN BLOOM / 光绽</p>
+      <h2 id="fallback-title">这片夜色暂时无法渲染</h2>
+      <p class="fallback-note" id="fallback-note">请使用支持 WebGL 2 的现代浏览器，并通过本地 HTTP 服务打开本项目。</p>
+      <div class="fallback-actions">
+        <button type="button" id="fallback-reload">重新加载</button>
+        <button type="button" id="fallback-copy">复制链接</button>
+      </div>
+      <p class="fallback-hint" id="fallback-hint" hidden></p>
+      <p class="fallback-address" id="fallback-address"></p>
+    </div>
+
+    <noscript>
+      <div class="fallback">
+        <p class="fallback-eyebrow">LUMEN BLOOM</p>
+        <h2>请启用 JavaScript</h2>
+        <p class="fallback-note">这朵花由实时粒子与 GLSL 构成，需要 JavaScript 才能绽放。</p>
+      </div>
+    </noscript>
+  </main>
+
+  <!-- Prebuilt classic bundle: deliberately avoids Import Maps for WeChat/X5. -->
+  <script id="app-script" src="./app.bundle.js?v=wechat3" defer></script>
+  <script>
+    (function () {
+      var fallback = document.getElementById('fallback');
+      var boot = document.getElementById('boot-screen');
+      var title = document.getElementById('fallback-title');
+      var note = document.getElementById('fallback-note');
+      var hint = document.getElementById('fallback-hint');
+      var address = document.getElementById('fallback-address');
+      var reloadButton = document.getElementById('fallback-reload');
+      var copyButton = document.getElementById('fallback-copy');
+      var appScript = document.getElementById('app-script');
+      var isWeChat = /MicroMessenger/i.test(navigator.userAgent);
+      var ready = false;
+      var fallbackShown = false;
+      var timer;
+
+      function clearBootTimer() {
+        if (timer) {
+          window.clearTimeout(timer);
+          timer = 0;
+        }
+      }
+
+      function showFallback(kind, force) {
+        if (!fallback || (ready && !force)) return;
+        // Keep the first, most specific explanation instead of overwriting
+        // it when a later generic error (e.g. renderer setup) arrives.
+        if (fallbackShown && !fallback.hidden) return;
+        fallbackShown = true;
+        clearBootTimer();
+        document.body.classList.remove('is-ready');
+        document.body.classList.add('has-fallback');
+        if (boot) boot.setAttribute('aria-hidden', 'true');
+
+        if (kind === 'webgl') {
+          title.textContent = '这朵花需要 WebGL 2';
+          note.textContent = '当前浏览器的 3D 渲染能力不可用。请尝试更新浏览器，或改用系统浏览器打开。';
+        } else if (kind === 'timeout' || kind === 'script') {
+          title.textContent = isWeChat ? '微信内置浏览器未能打开这朵花' : '页面暂时没有完成加载';
+          note.textContent = isWeChat
+            ? '微信内置浏览器可能不支持本页的 3D 渲染。请点击右上角 ···，选择「在浏览器打开」。'
+            : '请刷新页面，或使用最新版 Chrome、Edge、Safari 打开。';
+        } else {
+          title.textContent = '这片夜色暂时无法渲染';
+          note.textContent = '请使用支持 WebGL 2 的现代浏览器，并通过本地 HTTP 服务打开本项目。';
+        }
+
+        hint.hidden = !isWeChat;
+        hint.textContent = isWeChat
+          ? '微信内操作：右上角 ··· → 在浏览器打开。若系统浏览器提示“本地网络”，请选择允许。'
+          : '';
+        if (address) address.textContent = window.location.href;
+        fallback.hidden = false;
+      }
+
+      window.__LUMEN_SHOW_FALLBACK__ = showFallback;
+
+      window.__LUMEN_MARK_READY__ = function () {
+        if (ready) return;
+        ready = true;
+        window.__LUMEN_READY__ = true;
+        clearBootTimer();
+        if (fallback) fallback.hidden = true;
+        document.body.classList.remove('has-fallback');
+        document.body.classList.add('is-ready');
+      };
+
+      // Keep the page from ever being an unexplained empty rectangle.
+      timer = window.setTimeout(function () {
+        if (!ready) showFallback('timeout');
+      }, 8000);
+
+      if (appScript) {
+        appScript.addEventListener('error', function () {
+          showFallback('script');
+        });
+      }
+
+      window.addEventListener('error', function () {
+        if (ready) return;
+        window.setTimeout(function () {
+          if (!ready && fallback && fallback.hidden) showFallback('script');
+        }, 250);
+      });
+
+      try {
+        var probe = document.createElement('canvas');
+        var gl = probe.getContext('webgl2');
+        if (!gl) {
+          showFallback('webgl');
+        } else {
+          var loseContext = gl.getExtension('WEBGL_lose_context');
+          if (loseContext) loseContext.loseContext();
+        }
+      } catch (error) {
+        showFallback('webgl');
+      }
+
+      if (reloadButton) {
+        reloadButton.addEventListener('click', function () {
+          window.location.reload();
+        });
+      }
+
+      if (copyButton) {
+        copyButton.addEventListener('click', function () {
+          var text = window.location.href;
+          var restore = function (label) {
+            copyButton.textContent = label;
+            window.setTimeout(function () {
+              copyButton.textContent = '复制链接';
+            }, 1800);
+          };
+          var fallbackCopy = function () {
+            var field = document.createElement('textarea');
+            field.value = text;
+            field.setAttribute('readonly', '');
+            field.style.position = 'fixed';
+            field.style.opacity = '0';
+            document.body.appendChild(field);
+            field.select();
+            try {
+              var copied = document.execCommand('copy');
+              restore(copied ? '已复制' : '请长按地址复制');
+            } catch (error) {
+              restore('请长按地址复制');
+            }
+            document.body.removeChild(field);
+          };
+          if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(text).then(function () {
+              restore('已复制');
+            }).catch(fallbackCopy);
+          } else {
+            fallbackCopy();
+          }
+        });
+      }
+    })();
+  </script>
+</body>
+</html>
